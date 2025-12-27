@@ -11,7 +11,7 @@ class SNAKE:
         self.direction = Vector2(0, 0)
         self.new_block = False
 
-        # Load Graphics
+        # Graphics
         self.head_up = pygame.image.load('Graphics/head_up.png').convert_alpha()
         self.head_down = pygame.image.load('Graphics/head_down.png').convert_alpha()
         self.head_right = pygame.image.load('Graphics/head_right.png').convert_alpha()
@@ -73,11 +73,6 @@ class SNAKE:
             body_copy = self.body[:-1]
             body_copy.insert(0, body_copy[0] + self.direction)
             self.body = body_copy[:]
-        
-        # Screen wrap
-        self.body[0].x %= self.cell_number
-        if self.body[0].y < 1: self.body[0].y = self.cell_number - 1
-        elif self.body[0].y >= self.cell_number: self.body[0].y = 1
 
     def reset(self):
         self.body = [Vector2(5, 10), Vector2(4, 10), Vector2(3, 10)]
@@ -85,18 +80,23 @@ class SNAKE:
 
 class FRUIT:
     def __init__(self, screen, cell_size, cell_number, apple_img, walls):
-        self.screen, self.cell_size, self.cell_number = screen, cell_size, cell_number
-        self.apple, self.walls = apple_img, walls
+        self.screen = screen
+        self.cell_size = cell_size
+        self.cell_number = cell_number
+        self.apple = apple_img
+        self.walls = walls
         self.randomize()
 
     def draw_fruit(self):
         rect = pygame.Rect(int(self.pos.x * self.cell_size), int(self.pos.y * self.cell_size), self.cell_size, self.cell_size)
         self.screen.blit(self.apple, rect)
 
-    def randomize(self):
+    def randomize(self, snake_body=[]):
         while True:
-            self.pos = Vector2(random.randint(0, self.cell_number - 1), random.randint(1, self.cell_number - 1))
-            if self.pos not in self.walls: break
+            random_pos = Vector2(random.randint(0, self.cell_number - 1), random.randint(1, self.cell_number - 1))
+            if random_pos not in self.walls and random_pos not in snake_body:
+                self.pos = random_pos
+                break
 
 class LEVEL3_MGR:
     def __init__(self, screen, cell_size, cell_number, apple, font, SCREEN_UPDATE, current_score, speed):
@@ -105,7 +105,8 @@ class LEVEL3_MGR:
         self.wall_rects = self.create_walls()
         self.snake = SNAKE(screen, cell_size, cell_number)
         self.fruit = FRUIT(screen, cell_size, cell_number, apple, self.wall_rects)
-        self.fruit_count, self.speed = current_score, speed
+        self.fruit_count = current_score
+        self.speed = speed
         self.level = 3
         self.game_over_flag = self.level_up_flag = self.paused = False
         self.game_over_sound = pygame.mixer.Sound('Sound/game_over.wav')
@@ -114,16 +115,12 @@ class LEVEL3_MGR:
 
     def create_walls(self):
         walls = []
-        for x in range(0, 4):
-            walls.append(Vector2(x, 1)) 
-            walls.append(Vector2(self.cell_number-x-1, 1)) 
+        for x in range(0, self.cell_number):
+            walls.append(Vector2(x, 1))
             walls.append(Vector2(x, self.cell_number - 1))
-            walls.append(Vector2(self.cell_number-x-1, self.cell_number - 1))
-        for y in range(2, 5):
+        for y in range(2, self.cell_number - 1):
             walls.append(Vector2(0, y))
-            walls.append(Vector2(0, self.cell_number-y))
             walls.append(Vector2(self.cell_number - 1, y))
-            walls.append(Vector2(self.cell_number - 1, self.cell_number-y))
         return walls
 
     def draw_walls(self):
@@ -139,7 +136,7 @@ class LEVEL3_MGR:
 
     def check_collision(self):
         if self.fruit.pos == self.snake.body[0]:
-            self.fruit.randomize()
+            self.fruit.randomize(self.snake.body)
             self.snake.new_block = True
             self.snake.crunch_sound.play()
             self.fruit_count += 1

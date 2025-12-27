@@ -110,10 +110,12 @@ class FRUIT:
         fruit_rect = pygame.Rect(int(self.pos.x * self.cell_size), int(self.pos.y * self.cell_size), self.cell_size, self.cell_size)
         self.screen.blit(self.apple, fruit_rect)
 
-    def randomize(self):
-        self.x = random.randint(0, self.cell_number - 1)
-        self.y = random.randint(1, self.cell_number - 1)
-        self.pos = Vector2(self.x, self.y)
+    def randomize(self, snake_body=[]):
+        while True:
+            self.x = random.randint(0, self.cell_number - 1)
+            self.y = random.randint(1, self.cell_number - 1)
+            self.pos = Vector2(self.x, self.y)
+            if self.pos not in snake_body: break
 
 class LEVEL_MANAGER:
     def __init__(self, screen, cell_size, cell_number, apple, font, SCREEN_UPDATE, current_score, speed):
@@ -144,7 +146,7 @@ class LEVEL_MANAGER:
 
     def check_collision(self):
         if self.fruit.pos == self.snake.body[0]:
-            self.fruit.randomize()
+            self.fruit.randomize(self.snake.body)
             self.snake.add_block()
             self.snake.crunch_sound.play()
             self.fruit_count += 1
